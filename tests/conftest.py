@@ -32,6 +32,7 @@ def _no_clear(monkeypatch):
 def fake_inputs(values):
     it = iter(values)
     real = builtins.input
+
     def _fake(_=None):
         try:
             return next(it)
@@ -168,11 +169,13 @@ def make_game(game_modules, make_tamagochi):
             _make_food(Food, name="Яблоко", satiety=10, price=15),
         ]
         all_medicine = meds if meds is not None else [
-            _make_medicine(Medicine, name="Ибупрофен", price=30, heal_hp=20, number_of_uses=2),
+            _make_medicine(Medicine, name="Ибупрофен", price=30,
+                           heal_hp=20, number_of_uses=2),
         ]
 
         try:
-            game = impl_cls(tamagochi, clicker, all_food=all_food, all_medicine=all_medicine)
+            game = impl_cls(tamagochi, clicker, all_food=all_food,
+                            all_medicine=all_medicine)
         except TypeError:
             raise AssertionError(
                 "Не получается создать объект игры: ожидаются аргументы конструктора "
