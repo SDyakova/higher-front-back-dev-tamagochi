@@ -1,16 +1,34 @@
-"""Модуль с интерфейсом и реализациями класса тамагочи"""
+"""Модуль с интерфейсом и реализациями класса."""
 
+# Стандартная библиотека
 from abc import ABC, abstractmethod
-from .models import Food, Medicine
+
+# Локальные модули проекта
+from game.models import Food, Medicine
+from game.constants import (
+    MIN_STATE_VALUE,
+    MAX_STATE_VALUE,
+    INITIAL_HUNGER,
+    INITIAL_HP,
+    INITIAL_ENERGY,
+    ENERGY_LOSS_PLAY,
+    HUNGER_GAIN_PLAY,
+    ENERGY_GAIN_REST,
+    HUNGER_GAIN_REST,
+    HUNGER_DAMAGE_THRESHOLD,
+    HP_LOSS_HUNGER,
+    HUNGER_INCREASE_PER_UPDATE,
+    ENERGY_LOSS_PER_UPDATE
+)
 
 
 class AbstractTamagochi(ABC):
-    """Интерфейс логики тамагочи"""
+    """Интерфейс логики тамагочи."""
 
     @abstractmethod
     def feed(self, food: Food) -> None:
         """
-        Абстрактный метод для кормления тамагочи
+        Абстрактный метод для кормления тамагочи.
 
         :param food: объект еды для кормления
         """
@@ -18,18 +36,18 @@ class AbstractTamagochi(ABC):
 
     @abstractmethod
     def play(self) -> None:
-        """Абстрактный метод для игры с тамагочи"""
+        """Абстрактный метод для игры с тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def rest(self) -> None:
-        """Абстрактный метод для отдыха тамагочи"""
+        """Абстрактный метод для отдыха тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def heal(self, medicine: Medicine) -> None:
         """
-        Абстрактный метод для лечения тамагочи
+        Абстрактный метод для лечения тамагочи.
 
         :param medicine: лекарство для лечения
         """
@@ -39,7 +57,7 @@ class AbstractTamagochi(ABC):
     @abstractmethod
     def status(self) -> dict[str, int]:
         """
-        Абстрактное свойство для доступа ко всем состояниям тамагочи
+        Абстрактное свойство для доступа ко всем состояниям тамагочи.
 
         :return: словарь со всеми состояниями тамагочи
         """
@@ -48,7 +66,7 @@ class AbstractTamagochi(ABC):
     @abstractmethod
     def is_alive(self) -> bool:
         """
-        Абстрактный метод для проверки жив ли тамагочи
+        Абстрактный метод для проверки жив ли тамагочи.
 
         :return: True если жив, иначе False
         """
@@ -57,7 +75,7 @@ class AbstractTamagochi(ABC):
     @abstractmethod
     def is_sick(self) -> bool:
         """
-        Абстрактный метод для проверки, не заболел ли тамагочи
+        Абстрактный метод для проверки, не заболел ли тамагочи.
 
         :return: True если тамагочи болеет, иначе False
         """
@@ -73,47 +91,44 @@ class AbstractTamagochi(ABC):
 
 
 class SimpleTamagochi(AbstractTamagochi):
-    """Реализация логики питомца"""
+    """Реализация логики питомца."""
 
-    def __init__(self):
-        self._state = {
-            'hunger': 50,
-            'hp': 100,
-            'energy': 50
+    def __init__(self) -> None:
+        self._state: dict[str, int] = {
+            "hunger": INITIAL_HUNGER,
+            "hp": INITIAL_HP,
+            "energy": INITIAL_ENERGY,
         }
 
     def _limit_state(self, key: str) -> None:
-        """Ограничивает значение показателя в диапазоне 0–100"""
-        if self._state[key] < 0:
-            self._state[key] = 0
-        elif self._state[key] > 100:
-            self._state[key] = 100
+        """Ограничивает значение показателя в диапазоне."""
+        if self._state[key] < MIN_STATE_VALUE:
+            self._state[key] = MIN_STATE_VALUE
+        elif self._state[key] > MAX_STATE_VALUE:
+            self._state[key] = MAX_STATE_VALUE
 
     def feed(self, food: Food) -> None:
-        """Питомец ест — голод уменьшается, тратится энергия"""
+        """Кормление питомца"""
         self._state["hunger"] -= food.satiety
-        self._state["energy"] -= 5
         self._limit_state("hunger")
         self._limit_state("energy")
 
     def play(self) -> None:
-        """Питомец играет — тратит энергию и становится голоднее"""
-        self._state["energy"] -= 10
-        self._state["hunger"] += 5
+        """Питомец играет — тратит энергию и становится голоднее."""
+        self._state["energy"] -= ENERGY_LOSS_PLAY
+        self._state["hunger"] += HUNGER_GAIN_PLAY
         self._limit_state("energy")
         self._limit_state("hunger")
 
     def rest(self) -> None:
-        """Питомец отдыхает — восстанавливает энергию, немного голодает"""
-        possible_gain = 100 - self._state['energy']
-        gain = min(20, possible_gain)
-        self._state['energy'] += gain
-        self._state['hunger'] += 5
-        self._limit_state('energy')
-        self._limit_state('hunger')
+        """Питомец отдыхает — восстанавливает энергию, немного голодает."""
+        self._state["energy"] += ENERGY_GAIN_REST
+        self._state["hunger"] += HUNGER_GAIN_REST
+        self._limit_state("energy")
+        self._limit_state("hunger")
 
     def heal(self, medicine: Medicine) -> None:
-        """Лечим питомца, восстанавливая здоровье"""
+        """Лечим питомца, восстанавливая здоровье."""
         if medicine.is_empty():
             return
         medicine.uses += 1
@@ -122,23 +137,25 @@ class SimpleTamagochi(AbstractTamagochi):
 
     @property
     def status(self):
-        """Возвращаем текущие показатели питомца"""
+        """Возвращаем текущие показатели питомца."""
         return self._state.copy()
 
     def is_alive(self) -> bool:
-        """Проверяем, жив ли питомец"""
+        """Проверяем, жив ли питомец."""
         return self._state['hp'] > 0
 
     def is_sick(self) -> bool:
-        """Проверяем, болен ли питомец"""
+        """Проверяем, болен ли питомец."""
         return self._state['hp'] < 50
 
     def update(self) -> None:
-        """Обновляем состояние питомца после каждого действия"""
-        self._state["hunger"] += 2
-        self._state["energy"] -= 2
-        if self._state["hunger"] > 80:
-            self._state["hp"] -= 5
+        """Обновляем состояние питомца после каждого действия."""
+        self._state["hunger"] += HUNGER_INCREASE_PER_UPDATE
+        self._state["energy"] -= ENERGY_LOSS_PER_UPDATE
+
+        if self._state["hunger"] > HUNGER_DAMAGE_THRESHOLD:
+            self._state["hp"] -= HP_LOSS_HUNGER
+
         self._limit_state("hunger")
         self._limit_state("energy")
         self._limit_state("hp")

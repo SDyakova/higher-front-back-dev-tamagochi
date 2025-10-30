@@ -1,13 +1,15 @@
+# Стандартная библиотека
 import os
 
-from game.models import Food, Medicine
-from game.tamagochi import SimpleTamagochi
+# Локальные модули проекта
 from game.clicker import SimpleRandomClicker
 from game.game import SimpleGame
+from game.models import Food, Medicine
+from game.tamagochi import SimpleTamagochi
 
 
 def main():
-    """Запускает игру и управляет игровым циклом"""
+    """Запускает игру и управляет игровым циклом."""
     all_food = [
         Food(name="Бургер", satiety=20, price=40),
         Food(name="Салат", satiety=10, price=20),
@@ -27,31 +29,54 @@ def main():
         all_medicine=all_medicine
     )
 
+    def choose_item_and_buy(items, buy_method, item_type):
+        """Выбор и покупка еды или лекарства."""
+        menu_lines = [
+            f"{i}. {item.name} ({item.price} монет)"
+            for i, item in enumerate(items)]
+        print(f"Выберите {item_type} для покупки:\n" + "\n".join(menu_lines))
+
+        index = int(input("Введите номер: "))
+        try:
+            buy_method(items[index])
+            return f"Вы купили {items[index].name}"
+        except Exception as e:
+            return str(e)
+
     print("Добро пожаловать в Тамагочи-кликер!")
     output = ""
 
     while True:
-        print(output)
-
-        print(f"Сумка с едой: {game.food}")
-        print(f"Сумка с лекарствами: {game.medicine}")
-
         status = game.get_status()
-        print(
-            f"\nСтатус: голод {status['hunger']}, здоровье {status['hp']}, "
-            f"энергия {status['energy']}, монет {status['coins']}\n"
-        )
+        food_str = ", ".join(f.name for f in game.food)
+        medicine_str = ", ".join(m.name for m in game.medicine)
+
+        output_lines = [
+            output,
+            f"Сумка с едой: {food_str}",
+            f"Сумка с лекарствами: {medicine_str}",
+            f"Статус: голод {status['hunger']}, "
+            f"здоровье {status['hp']}, "
+            f"энергия {status['energy']}, "
+            f"монет {status['coins']}"
+        ]
+
         if game.tamagochi.is_sick():
-            print("=======Тамагочи болеет======")
-            print("=======Отдых действует менее эффективно=======")
-            print("1. Пойти на работу")
-            print("2. Купить еду")
-            print("3. Купить лекарство")
-            print("4. Покормить")
-            print("5. Вылечить")
-            print("6. Играть")
-            print("7. Отдых")
-            print("0. Выход")
+            MENU = "\n".join([
+                "=======Тамагочи болеет======",
+                "=======Отдых действует менее эффективно=======",
+                "1. Пойти на работу",
+                "2. Купить еду",
+                "3. Купить лекарство",
+                "4. Покормить",
+                "5. Вылечить",
+                "6. Играть",
+                "7. Отдых",
+                "0. Выход"
+            ])
+            output_lines.append(MENU)
+
+        print("\n".join(output_lines))
 
         match input("Выберите действие: "):
             case "1":
@@ -59,27 +84,10 @@ def main():
                 output = f"Вы заработали {income} монет"
                 game.tamagochi.update()
             case "2":
-                print("Выберите еду для покупки")
-                for i, f in enumerate(all_food):
-                    print(f"{i}. {f.name} ({f.price} монет)")
-
-                index = int(input("Введите номер еды: "))
-                try:
-                    game.buy_food(all_food[index])
-                    output = f"Вы купили {all_food[index].name}"
-                except Exception as e:
-                    output = str(e)
+                output = choose_item_and_buy(all_food, game.buy_food, "еду")
             case "3":
-                print("Выберите лекарство для покупки:")
-                for i, m in enumerate(all_medicine):
-                    print(f"{i}. {m.name} ({m.price} монет)")
-
-                index = int(input("Введите номер лекарства: "))
-                try:
-                    game.buy_medicine(all_medicine[index])
-                    output = f"Вы купили {all_medicine[index].name}"
-                except Exception as e:
-                    output = str(e)
+                output = choose_item_and_buy(
+                    all_medicine, game.buy_medicine, "лекарство")
             case "4":
                 if game.food:
                     game.feed_tamagochi(0)
